@@ -204,6 +204,21 @@ def norm_data(df_train, df_test):
 
     return df_train, df_test
 
+def var_dis(df):
+    ls_results = list()
+    for pers_name in pers_names:
+        ls_traits = df[pers_name].tolist()
+        val_var = np.var(ls_traits)
+        val_mean = np.mean(ls_traits)
+        ls_dis = list()
+        for i in ls_traits:
+            ls_dis.append(abs(i - val_mean))
+
+        ls_results.append([pers_name, val_var, np.mean(ls_dis)])
+
+    df_results = pd.DataFrame(ls_results, columns=['personality', 'variance', 'distance'])
+
+    return df_results
 
 def loocv_person(df, pers_name, ml_model_name):
     # target_pers = pers_names
@@ -274,6 +289,25 @@ def loocv_person(df, pers_name, ml_model_name):
     return ls_results_loocv, ls_feat_loocv
 
 
+def loocv_person_bench(df, pers_name):
+    # target_pers = pers_names
+    ls_results_loocv = list()
+    parti_ids = df.index.tolist()
+    for iter_num, parti_id in enumerate(parti_ids):
+        test_id = [parti_id]
+        test_set = df.loc[test_id, :]
+        train_ids = copy.deepcopy(parti_ids)
+        train_ids.remove(parti_id)
+        train_set = df.loc[train_ids, :]
+        Y_train = train_set[pers_name]
+        Y_test = test_set[pers_name]
+        Y_pred = np.mean(Y_train.tolist())
+        ls_results_iter = [pers_name, parti_id, Y_test.tolist(), [Y_pred]]
+        ls_results_loocv.append(ls_results_iter)
+
+    return ls_results_loocv
+
+
 def loocv_day(df, pers_name, ml_model_name):
     # target_pers = pers_names
     ls_results_loocv = list()
@@ -322,6 +356,29 @@ def loocv_day(df, pers_name, ml_model_name):
             ls_results_loocv.append(ls_results_iter)
 
     return ls_results_loocv, ls_feat_loocv
+
+
+def loocv_day_bench(df, pers_name):
+    # target_pers = pers_names
+    parti_ids = list(set(df['participantID'].tolist()))
+    ls_results_loocv = list()
+    for iter_num, parti_id in enumerate(parti_ids):
+        test_id = [parti_id]
+        test_set = df[df['participantID'].isin(test_id)]
+        test_set.reset_index(drop=True, inplace=True)
+        test_set.drop(['participantID'], axis=1)
+        train_ids = copy.deepcopy(parti_ids)
+        train_ids.remove(parti_id)
+        train_set = df[df['participantID'].isin(train_ids)]
+        train_set.reset_index(drop=True, inplace=True)
+        train_set.drop(['participantID'], axis=1)
+        Y_train = train_set[pers_name]
+        Y_test = list(set(test_set[pers_name].tolist()))
+        Y_pred = np.mean(Y_train.tolist())
+        ls_results_iter = [pers_name, parti_id, Y_test, [Y_pred]]
+        ls_results_loocv.append(ls_results_iter)
+
+    return ls_results_loocv
 
 
 def combine_param(param_space, param_names, accum, param_combs):
