@@ -204,21 +204,24 @@ def norm_data(df_train, df_test):
 
     return df_train, df_test
 
-def var_dis(df):
+
+def var_dis(df, avg_row):
     ls_results = list()
     for pers_name in pers_names:
         ls_traits = df[pers_name].tolist()
-        val_var = np.var(ls_traits)
         val_mean = np.mean(ls_traits)
+        ls_var = list()
         ls_dis = list()
         for i in ls_traits:
+            ls_var.append(np.sqrt(i - val_mean))
             ls_dis.append(abs(i - val_mean))
 
-        ls_results.append([pers_name, val_var, np.mean(ls_dis)])
+        ls_results.append([pers_name, np.sum(ls_var)/(len(ls_traits) - avg_row), np.sum(ls_dis)/(len(ls_traits) - avg_row)])
 
     df_results = pd.DataFrame(ls_results, columns=['personality', 'variance', 'distance'])
 
     return df_results
+
 
 def loocv_person(df, pers_name, ml_model_name):
     # target_pers = pers_names
